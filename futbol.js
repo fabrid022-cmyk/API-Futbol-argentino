@@ -1,90 +1,90 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // 🚨 CLAVE API 🚨
-    const API_KEY = 'ceb9cf0cc9524e9d32f20e7215f4da1c'; 
-    
-    // URL base de la API-SPORTS
-    const BASE_URL = 'https://v3.football.api-sports.io/';
+    // TheSportsDB API v1 — clave pública gratuita (no es secreta, la documenta el proveedor)
+    const API_KEY = '123';
+    const BASE_URL = `https://www.thesportsdb.com/api/v1/json/${API_KEY}`;
 
-    // ⭐ CONFIGURACIÓN FINAL Y CORRECTA ⭐
-    // LIGA PROFESIONAL ARGENTINA (ID 128)
-    const LEAGUE_ID = 128;
-    const SEASON = 2023; // Usar 2023 o el último año que tenga datos completos
-    
-    const API_URL = `${BASE_URL}standings?league=${LEAGUE_ID}&season=${SEASON}`; 
+    // Liga Profesional Argentina en TheSportsDB
+    const LEAGUE_ID = 4406;
+    const CURRENT_SEASON = new Date().getFullYear();
 
-    const clubesBody = document.querySelector('#clubes-table tbody');
-    const loadingMessage = document.getElementById('loading');
-    
-    // Actualizar el título de la página para mayor claridad
-    document.querySelector('header p').textContent = `Mostrando datos de la Liga Profesional Argentina (ID ${LEAGUE_ID}, Temporada ${SEASON})`;
+    const tbody = document.querySelector('#clubes-table tbody');
+    const table = document.getElementById('clubes-table');
+    const status = document.getElementById('loading');
+    const subtitle = document.querySelector('header p');
 
-    // Función principal para obtener los datos de la API
-    async function fetchClubes() {
+    async function fetchTabla(season) {
+        const url = `${BASE_URL}/lookuptable.php?l=${LEAGUE_ID}&s=${season}`;
+        const response = await fetch(url);
+        if (!response.ok) {
+            throw new Error(`Error HTTP ${response.status} al consultar la API`);
+        }
+        const data = await response.json();
+        return Array.isArray(data.table) ? data.table : [];
+    }
+
+    async function cargar() {
         try {
-            const response = await fetch(API_URL, {
-                method: 'GET',
-                headers: {
-                    'x-apisports-key': API_KEY 
-                }
-            });
-
-            if (!response.ok) {
-                throw new Error(`Error HTTP: ${response.status}. Hubo un problema con la clave o la petición.`);
+            // Si la temporada actual todavía no tiene tabla, se usa la anterior
+            let season = CURRENT_SEASON;
+            let filas = await fetchTabla(season);
+            if (filas.length === 0) {
+                season = CURRENT_SEASON - 1;
+                filas = await fetchTabla(season);
+            }
+            if (filas.length === 0) {
+                throw new Error('La API no devolvió la tabla de posiciones.');
             }
 
-            const data = await response.json();
-            
-            if (!data.response || data.response.length === 0) {
-                 throw new Error('La API no devolvió datos. Liga/Temporada no disponible.');
-            }
-
-            loadingMessage.style.display = 'none';
-
-            // Estructura de navegación al array de clubes
-            const standings = data.response[0].league.standings[0];
-            
-            renderClubes(standings);
-
+            filas.sort((a, b) => Number(a.intRank) - Number(b.intRank));
+            subtitle.textContent = `Liga Profesional Argentina · Temporada ${season}`;
+            render(filas);
+            status.hidden = true;
+            table.hidden = false;
         } catch (error) {
-            console.error('Error al obtener o procesar los datos:', error);
-            loadingMessage.textContent = '❌ Error al cargar los datos: ' + error.message;
-            loadingMessage.style.color = 'red';
+            console.error('Error al obtener los datos:', error);
+            status.textContent = `No se pudo cargar la tabla: ${error.message}`;
+            status.classList.add('error');
         }
     }
 
-    // Función para dibujar la tabla
-    function renderClubes(clubes) {
-        clubesBody.innerHTML = ''; 
+    function celda(row, texto, clase) {
+        const td = row.insertCell();
+        td.textContent = texto ?? '-';
+        if (clase) td.className = clase;
+        return td;
+    }
 
-        clubes.forEach((club) => {
-            const row = clubesBody.insertRow();
-            
-            // 1. Posición
-            const posCell = row.insertCell();
-            posCell.textContent = club.rank; 
-            
-            // 2. Nombre del Club
-            const nameCell = row.insertCell();
-            nameCell.innerHTML = `
-                <img src="${club.team.logo}" alt="${club.team.name} Logo" style="height: 20px; vertical-align: middle; margin-right: 10px;">
-                ${club.team.name}
-            `;
-            
-            // 3. Copas (Clasificación/Descenso)
-            const copasCell = row.insertCell();
-            let description = club.description || 'Sin clasificación directa';
-            
-            // Lógica de clasificación simplificada (adaptada a lo que podría esperar un usuario)
-            if (club.rank <= 4) {
-                 description = '🏆 Zona Copa Libertadores';
-            } else if (club.rank <= 9) {
-                 description = '🏅 Zona Copa Sudamericana';
+    function render(filas) {
+        tbody.replaceChildren();
+        filas.forEach((club) => {
+            const row = tbody.insertRow();
+
+            celda(row, club.intRank, 'num');
+
+            // Escudo + nombre, sin innerHTML
+            const tdEquipo = row.insertCell();
+            tdEquipo.className = 'equipo';
+            if (club.strBadge) {
+                const img = document.createElement('img');
+                img.src = `${club.strBadge}/tiny`;
+                img.alt = '';
+                img.width = 22;
+                img.height = 22;
+                img.loading = 'lazy';
+                tdEquipo.appendChild(img);
             }
-            
-            copasCell.textContent = description;
+            tdEquipo.appendChild(document.createTextNode(club.strTeam ?? ''));
+
+            celda(row, club.intPlayed, 'num');
+            celda(row, club.intWin, 'num');
+            celda(row, club.intDraw, 'num');
+            celda(row, club.intLoss, 'num');
+            celda(row, club.intGoalDifference, 'num');
+            celda(row, club.intPoints, 'num pts');
+            // Zona real que informa la API (Libertadores, Sudamericana, etc.)
+            celda(row, club.strDescription || '', 'zona');
         });
     }
 
-    // Ejecutar la función
-    fetchClubes();
+    cargar();
 });

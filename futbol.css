@@ -13,9 +13,16 @@ header {
     text-align: center;
 }
 
+header h1 { margin: 0 0 6px; }
+header p { margin: 0; }
+
 main {
     padding: 20px;
+    max-width: 960px;
+    margin: 0 auto;
 }
+
+.table-wrap { overflow-x: auto; }
 
 #clubes-table {
     width: 100%;
@@ -26,9 +33,10 @@ main {
 }
 
 #clubes-table th, #clubes-table td {
-    padding: 12px 15px;
+    padding: 10px 12px;
     text-align: left;
     border-bottom: 1px solid #ddd;
+    white-space: nowrap;
 }
 
 #clubes-table th {
@@ -36,8 +44,25 @@ main {
     font-weight: bold;
 }
 
+#clubes-table .num { text-align: right; font-variant-numeric: tabular-nums; }
+#clubes-table .pts { font-weight: bold; }
+#clubes-table .zona { color: #666; font-size: 0.9em; white-space: normal; }
+
+.equipo img {
+    vertical-align: middle;
+    margin-right: 10px;
+}
+
 #loading {
     text-align: center;
     font-style: italic;
     padding: 20px;
+}
+
+#loading.error { color: #c0392b; font-style: normal; }
+
+.fuente {
+    font-size: 0.85em;
+    color: #666;
+    text-align: right;
 }

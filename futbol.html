@@ -3,31 +3,38 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Clubes de Fútbol Argentino - API</title>
+    <title>Tabla de Posiciones - Fútbol Argentino</title>
     <link rel="stylesheet" href="futbol.css">
 </head>
 <body>
     <header>
-        <h1>⚽ Información de Clubes Argentinos</h1>
-        <p>Mostrando datos de la Liga Argentina (Temporada 2023)</p>
+        <h1>⚽ Tabla de Posiciones</h1>
+        <p>Liga Profesional Argentina</p>
     </header>
-    
+
     <main>
         <section id="clubes-container">
-            <h2>Tabla de Posiciones</h2>
-            <div id="loading">Cargando datos...</div>
-            <table id="clubes-table">
-                <thead>
-                    <tr>
-                        <th>Posición</th>
-                        <th>Nombre del Club</th>
-                        <th>Clasificación (Copa)</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    </tbody>
-            </table>
+            <div id="loading" role="status">Cargando datos...</div>
+            <div class="table-wrap">
+                <table id="clubes-table" hidden>
+                    <thead>
+                        <tr>
+                            <th class="num">#</th>
+                            <th>Equipo</th>
+                            <th class="num" title="Partidos jugados">PJ</th>
+                            <th class="num" title="Ganados">G</th>
+                            <th class="num" title="Empatados">E</th>
+                            <th class="num" title="Perdidos">P</th>
+                            <th class="num" title="Diferencia de gol">DG</th>
+                            <th class="num" title="Puntos">Pts</th>
+                            <th>Zona</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
         </section>
+        <p class="fuente">Datos: <a href="https://www.thesportsdb.com/league/4406">TheSportsDB</a></p>
     </main>
 
     <script src="futbol.js"></script>
