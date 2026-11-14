@@ -11,6 +11,15 @@ document.addEventListener('DOMContentLoaded', () => {
     const table = document.getElementById('clubes-table');
     const status = document.getElementById('loading');
     const subtitle = document.querySelector('header p');
+    const nota = document.getElementById('nota');
+
+    // Traducción de las zonas que informa la API
+    const ZONAS = {
+        'Knockout Phase': 'Clasifica a playoffs',
+        'Copa Libertadores': 'Copa Libertadores',
+        'Copa Sudamericana': 'Copa Sudamericana',
+        'Relegation': 'Descenso',
+    };
 
     async function fetchTabla(season) {
         const url = `${BASE_URL}/lookuptable.php?l=${LEAGUE_ID}&s=${season}`;
@@ -35,9 +44,18 @@ document.addEventListener('DOMContentLoaded', () => {
                 throw new Error('La API no devolvió la tabla de posiciones.');
             }
 
-            filas.sort((a, b) => Number(a.intRank) - Number(b.intRank));
+            // La API devuelve las zonas mezcladas (puestos repetidos):
+            // se ordena por puntos, diferencia de gol y goles a favor
+            filas.sort((a, b) =>
+                Number(b.intPoints) - Number(a.intPoints) ||
+                Number(b.intGoalDifference) - Number(a.intGoalDifference) ||
+                Number(b.intGoalsFor) - Number(a.intGoalsFor));
             subtitle.textContent = `Liga Profesional Argentina · Temporada ${season}`;
             render(filas);
+            if (filas.length < 10) {
+                nota.textContent = `Se muestran los primeros ${filas.length} equipos que entrega la API gratuita.`;
+                nota.hidden = false;
+            }
             status.hidden = true;
             table.hidden = false;
         } catch (error) {
@@ -56,17 +74,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function render(filas) {
         tbody.replaceChildren();
-        filas.forEach((club) => {
+        filas.forEach((club, i) => {
             const row = tbody.insertRow();
 
-            celda(row, club.intRank, 'num');
+            celda(row, i + 1, 'num');
 
             // Escudo + nombre, sin innerHTML
             const tdEquipo = row.insertCell();
             tdEquipo.className = 'equipo';
             if (club.strBadge) {
                 const img = document.createElement('img');
-                img.src = `${club.strBadge}/tiny`;
+                img.src = club.strBadge;
+                img.onerror = () => img.remove(); // si el escudo no carga, no queda el ícono roto
                 img.alt = '';
                 img.width = 22;
                 img.height = 22;
@@ -81,8 +100,8 @@ document.addEventListener('DOMContentLoaded', () => {
             celda(row, club.intLoss, 'num');
             celda(row, club.intGoalDifference, 'num');
             celda(row, club.intPoints, 'num pts');
-            // Zona real que informa la API (Libertadores, Sudamericana, etc.)
-            celda(row, club.strDescription || '', 'zona');
+            const zona = club.strDescription || '';
+            celda(row, ZONAS[zona] ?? zona, 'zona');
         });
     }
 
